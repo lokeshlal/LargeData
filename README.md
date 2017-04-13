@@ -1,4 +1,4 @@
-#LargeData
+# LargeData
 
 Recently I was working with a problem, where we have to transfer 5 GB (maximum or first load) of data set across client (WPF client) and server (Web APIs) (both download and upload) (don't ask me why, but yes that was the requirement). All this need to happen over vpn connection and users are across the world with a varying internet speed (which sometimes could be as low as 16 kbps).
 
