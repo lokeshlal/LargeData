@@ -1,0 +1,8 @@
+﻿namespace LargeData
+{
+    class FileHandler
+    {
+
+
+    }
+}
