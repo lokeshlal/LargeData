@@ -41,120 +41,7 @@ namespace LargeData.Helpers
                 {
                     row = new Dictionary<string, FieldValue>();
                     Dictionary<string, object> fieldValuesMapping = new Dictionary<string, object>();
-
-                    foreach (DataRow dr in tableSchema.Rows)
-                    {
-                        string columnName = dr["ColumnName"] as string;
-
-                        //string dataTypeName = dr["DataTypeName"] as string;
-                        string dataTypeName = "System.String";
-                        if (dr["DataType"] != null)
-                        {
-                            dataTypeName = ((Type)(dr["DataType"])).FullName as string;
-                        }
-                        if (dataTypeName == "timestamp") continue;
-
-                        Type dataType = typeof(int);
-
-                        FieldValue value = new FieldValue();
-
-                        switch (dataTypeName)
-                        {
-                            case "System.Int32": // change type
-                                if (reader[columnName] == null || reader[columnName] == DBNull.Value)
-                                {
-                                    value.IntValue = null;
-                                }
-                                else
-                                {
-                                    value.IntValue = Convert.ToInt32(reader[columnName]);
-                                }
-                                break;
-                            case "System.Int64": // change type
-                                if (reader[columnName] == null || reader[columnName] == DBNull.Value)
-                                {
-                                    value.LongValue = null;
-                                }
-                                else
-                                {
-                                    value.LongValue = Convert.ToInt64(reader[columnName]);
-                                }
-                                break;
-                            case "System.DateTimeOffset":
-                                if (reader[columnName] == null || reader[columnName] == DBNull.Value)
-                                {
-                                    value.DateTimeOffsetValue = null;
-                                }
-                                else
-                                {
-                                    value.DateTimeOffsetValue = (DateTimeOffset)(reader[columnName]);
-                                }
-                                break;
-                            case "System.DateTime":
-                                if (reader[columnName] == null || reader[columnName] == DBNull.Value)
-                                {
-                                    value.DateTimeValue = null;
-                                }
-                                else
-                                {
-                                    value.DateTimeValue = (DateTime)(reader[columnName]);
-                                }
-                                break;
-                            case "System.String":
-                                if (reader[columnName] == null || reader[columnName] == DBNull.Value)
-                                {
-                                    value.StringValue = null;
-                                }
-                                else
-                                {
-                                    value.StringValue = Convert.ToString(reader[columnName]);
-                                }
-                                break;
-                            case "System.Boolean":
-                                if (reader[columnName] == null || reader[columnName] == DBNull.Value)
-                                {
-                                    value.BoolValue = null;
-                                }
-                                else
-                                {
-                                    value.BoolValue = Convert.ToBoolean(reader[columnName]);
-                                }
-                                break;
-                            case "System.Byte[]":
-                                if (reader[columnName] == null || reader[columnName] == DBNull.Value)
-                                {
-                                    value.ByteValue = null;
-                                }
-                                else
-                                {
-                                    value.ByteValue = (byte[])(reader[columnName]);
-                                }
-                                break;
-                            case "System.Guid":
-                                if (reader[columnName] == null || reader[columnName] == DBNull.Value)
-                                {
-                                    value.GuidValue = null;
-                                }
-                                else
-                                {
-                                    value.GuidValue = (Guid)(reader[columnName]);
-                                }
-                                break;
-                            case "System.Decimal":
-                            case "System.Single":
-                            case "System.Double":
-                                if (reader[columnName] == null || reader[columnName] == DBNull.Value)
-                                {
-                                    value.DecimalValue = null;
-                                }
-                                else
-                                {
-                                    value.DecimalValue = Convert.ToDecimal(reader[columnName]);
-                                }
-                                break;
-                        }
-                        row.Add(columnName, value);
-                    }
+                    GetRow(reader, tableSchema, row);
 
                     rows.Add(row);
 
@@ -175,30 +62,6 @@ namespace LargeData.Helpers
             }
 
             return rootDirectory;
-        }
-
-        private static bool GetFileHeaderRow(DataTable tableSchema, bool containsIdentityColumn, Dictionary<string, FieldValue> dataTypeRow)
-        {
-            foreach (DataRow dr in tableSchema.Rows)
-            {
-                //if(tableSchema.Columns.Contains("IsIdentity"))
-                bool isIdentity = Convert.ToBoolean(dr["IsKey"]); //IsIdentity
-                if (isIdentity) containsIdentityColumn = true;
-
-                //string dataTypeName = dr["DataTypeName"] as string; // DataTypeName is present when created directly from reader
-                string dataTypeName = "System.String";
-                if (dr["DataType"] != null)
-                {
-                    dataTypeName = ((Type)(dr["DataType"])).FullName as string;
-                }
-                //Type dataType = typeof(int);
-
-                string columnName = dr["ColumnName"] as string;
-
-                dataTypeRow.Add(columnName, new FieldValue() { StringValue = dataTypeName });
-            }
-
-            return containsIdentityColumn;
         }
 
         public static string CreateFilesUsingReader(string guid, IDataReader reader, string temporaryLocation)
@@ -265,120 +128,8 @@ namespace LargeData.Helpers
                 }
                 row = new Dictionary<string, FieldValue>();
                 Dictionary<string, object> fieldValuesMapping = new Dictionary<string, object>();
+                GetRow(reader, tableSchema, row);
 
-                foreach (DataRow dr in tableSchema.Rows)
-                {
-                    string columnName = dr["ColumnName"] as string;
-
-                    //string dataTypeName = dr["DataTypeName"] as string;
-                    string dataTypeName = "System.String";
-                    if (dr["DataType"] != null)
-                    {
-                        dataTypeName = ((Type)(dr["DataType"])).FullName as string;
-                    }
-                    if (dataTypeName == "timestamp") continue;
-
-                    Type dataType = typeof(int);
-
-                    FieldValue value = new FieldValue();
-
-                    switch (dataTypeName)
-                    {
-                        case "System.Int32": // change type
-                            if (reader[columnName] == null || reader[columnName] == DBNull.Value)
-                            {
-                                value.IntValue = null;
-                            }
-                            else
-                            {
-                                value.IntValue = Convert.ToInt32(reader[columnName]);
-                            }
-                            break;
-                        case "System.Int64": // change type
-                            if (reader[columnName] == null || reader[columnName] == DBNull.Value)
-                            {
-                                value.LongValue = null;
-                            }
-                            else
-                            {
-                                value.LongValue = Convert.ToInt64(reader[columnName]);
-                            }
-                            break;
-                        case "System.DateTimeOffset":
-                            if (reader[columnName] == null || reader[columnName] == DBNull.Value)
-                            {
-                                value.DateTimeOffsetValue = null;
-                            }
-                            else
-                            {
-                                value.DateTimeOffsetValue = (DateTimeOffset)(reader[columnName]);
-                            }
-                            break;
-                        case "System.DateTime":
-                            if (reader[columnName] == null || reader[columnName] == DBNull.Value)
-                            {
-                                value.DateTimeValue = null;
-                            }
-                            else
-                            {
-                                value.DateTimeValue = (DateTime)(reader[columnName]);
-                            }
-                            break;
-                        case "System.String":
-                            if (reader[columnName] == null || reader[columnName] == DBNull.Value)
-                            {
-                                value.StringValue = null;
-                            }
-                            else
-                            {
-                                value.StringValue = Convert.ToString(reader[columnName]);
-                            }
-                            break;
-                        case "System.Boolean":
-                            if (reader[columnName] == null || reader[columnName] == DBNull.Value)
-                            {
-                                value.BoolValue = null;
-                            }
-                            else
-                            {
-                                value.BoolValue = Convert.ToBoolean(reader[columnName]);
-                            }
-                            break;
-                        case "System.Byte[]":
-                            if (reader[columnName] == null || reader[columnName] == DBNull.Value)
-                            {
-                                value.ByteValue = null;
-                            }
-                            else
-                            {
-                                value.ByteValue = (byte[])(reader[columnName]);
-                            }
-                            break;
-                        case "System.Guid":
-                            if (reader[columnName] == null || reader[columnName] == DBNull.Value)
-                            {
-                                value.GuidValue = null;
-                            }
-                            else
-                            {
-                                value.GuidValue = (Guid)(reader[columnName]);
-                            }
-                            break;
-                        case "System.Decimal":
-                        case "System.Single":
-                        case "System.Double":
-                            if (reader[columnName] == null || reader[columnName] == DBNull.Value)
-                            {
-                                value.DecimalValue = null;
-                            }
-                            else
-                            {
-                                value.DecimalValue = Convert.ToDecimal(reader[columnName]);
-                            }
-                            break;
-                    }
-                    row.Add(columnName, value);
-                }
                 rows.Add(row);
                 recordsProcessed++;
                 if (recordsProcessed >= ServerSettings.MaxRecordsInAFile)
@@ -392,6 +143,148 @@ namespace LargeData.Helpers
             }
             order++;
         }
+
+        private static void GetRow(IDataReader reader, DataTable tableSchema, Dictionary<string, FieldValue> row)
+        {
+            foreach (DataRow dr in tableSchema.Rows)
+            {
+                string columnName = dr["ColumnName"] as string;
+
+                //string dataTypeName = dr["DataTypeName"] as string;
+                string dataTypeName = "System.String";
+                if (dr["DataType"] != null)
+                {
+                    dataTypeName = ((Type)(dr["DataType"])).FullName as string;
+                }
+                if (dataTypeName == "timestamp") continue;
+
+                Type dataType = typeof(int);
+
+                FieldValue value = new FieldValue();
+
+                switch (dataTypeName)
+                {
+                    case "System.Int32": // change type
+                        if (reader[columnName] == null || reader[columnName] == DBNull.Value)
+                        {
+                            value.IntValue = null;
+                        }
+                        else
+                        {
+                            value.IntValue = Convert.ToInt32(reader[columnName]);
+                        }
+                        break;
+                    case "System.Int64": // change type
+                        if (reader[columnName] == null || reader[columnName] == DBNull.Value)
+                        {
+                            value.LongValue = null;
+                        }
+                        else
+                        {
+                            value.LongValue = Convert.ToInt64(reader[columnName]);
+                        }
+                        break;
+                    case "System.DateTimeOffset":
+                        if (reader[columnName] == null || reader[columnName] == DBNull.Value)
+                        {
+                            value.DateTimeOffsetValue = null;
+                        }
+                        else
+                        {
+                            value.DateTimeOffsetValue = (DateTimeOffset)(reader[columnName]);
+                        }
+                        break;
+                    case "System.DateTime":
+                        if (reader[columnName] == null || reader[columnName] == DBNull.Value)
+                        {
+                            value.DateTimeValue = null;
+                        }
+                        else
+                        {
+                            value.DateTimeValue = (DateTime)(reader[columnName]);
+                        }
+                        break;
+                    case "System.String":
+                        if (reader[columnName] == null || reader[columnName] == DBNull.Value)
+                        {
+                            value.StringValue = null;
+                        }
+                        else
+                        {
+                            value.StringValue = Convert.ToString(reader[columnName]);
+                        }
+                        break;
+                    case "System.Boolean":
+                        if (reader[columnName] == null || reader[columnName] == DBNull.Value)
+                        {
+                            value.BoolValue = null;
+                        }
+                        else
+                        {
+                            value.BoolValue = Convert.ToBoolean(reader[columnName]);
+                        }
+                        break;
+                    case "System.Byte[]":
+                        if (reader[columnName] == null || reader[columnName] == DBNull.Value)
+                        {
+                            value.ByteValue = null;
+                        }
+                        else
+                        {
+                            value.ByteValue = (byte[])(reader[columnName]);
+                        }
+                        break;
+                    case "System.Guid":
+                        if (reader[columnName] == null || reader[columnName] == DBNull.Value)
+                        {
+                            value.GuidValue = null;
+                        }
+                        else
+                        {
+                            value.GuidValue = (Guid)(reader[columnName]);
+                        }
+                        break;
+                    case "System.Decimal":
+                    case "System.Single":
+                    case "System.Double":
+                        if (reader[columnName] == null || reader[columnName] == DBNull.Value)
+                        {
+                            value.DecimalValue = null;
+                        }
+                        else
+                        {
+                            value.DecimalValue = Convert.ToDecimal(reader[columnName]);
+                        }
+                        break;
+                }
+                row.Add(columnName, value);
+            }
+        }
+
+        private static bool GetFileHeaderRow(DataTable tableSchema, bool containsIdentityColumn, Dictionary<string, FieldValue> dataTypeRow)
+        {
+            foreach (DataRow dr in tableSchema.Rows)
+            {
+                //if(tableSchema.Columns.Contains("IsIdentity"))
+                bool isIdentity = Convert.ToBoolean(dr["IsKey"]); //IsIdentity
+                if (isIdentity) containsIdentityColumn = true;
+
+                //string dataTypeName = dr["DataTypeName"] as string; // DataTypeName is present when created directly from reader
+                string dataTypeName = "System.String";
+                if (dr["DataType"] != null)
+                {
+                    dataTypeName = ((Type)(dr["DataType"])).FullName as string;
+                }
+                //Type dataType = typeof(int);
+
+                string columnName = dr["ColumnName"] as string;
+
+                dataTypeRow.Add(columnName, new FieldValue() { StringValue = dataTypeName });
+            }
+
+            return containsIdentityColumn;
+        }
+
 
         public static int CreateFile(string rootDirectory, int order, ref int fileCount, string tableName, bool containsIdentityColumn, Dictionary<string, FieldValue> dataTypeRow, List<Dictionary<string, FieldValue>> rows)
         {
