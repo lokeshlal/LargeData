@@ -15,4 +15,4 @@ On the basis of this we created the DataSet, both at client and server. Feed the
 
 At some places, we also ended up using datareader, as dataset was giving out of memory exception (in the current code, I have only used dataset, howover that can be replaced with the datareader as well)
 
-Note: still working on this library. Adding client to server upload, which requires splitting/stiching of files. Also working on adding data reader support, otherwise in some scenarios (huge dataset) the code will throw outofmemory exception.
+###### Note: still working on this library. Adding client to server upload, which requires splitting/stiching of files. Also working on adding data reader support, otherwise in some scenarios (huge dataset) the code will throw outofmemory exception.
