@@ -30,24 +30,7 @@ namespace LargeData.Helpers
 
                 bool containsIdentityColumn = false;
                 Dictionary<string, FieldValue> dataTypeRow = new Dictionary<string, FieldValue>();
-                foreach (DataRow dr in tableSchema.Rows)
-                {
-                    //if(tableSchema.Columns.Contains("IsIdentity"))
-                    bool isIdentity = Convert.ToBoolean(dr["IsKey"]); //IsIdentity
-                    if (isIdentity) containsIdentityColumn = true;
-
-                    //string dataTypeName = dr["DataTypeName"] as string; // DataTypeName is present when created directly from reader
-                    string dataTypeName = "System.String";
-                    if (dr["DataType"] != null)
-                    {
-                        dataTypeName = ((Type)(dr["DataType"])).FullName as string;
-                    }
-                    //Type dataType = typeof(int);
-
-                    string columnName = dr["ColumnName"] as string;
-
-                    dataTypeRow.Add(columnName, new FieldValue() { StringValue = dataTypeName });
-                }
+                containsIdentityColumn = GetFileHeaderRow(tableSchema, containsIdentityColumn, dataTypeRow);
 
                 int recordsProcessed = 0;
                 Dictionary<string, FieldValue> row;
@@ -194,6 +177,30 @@ namespace LargeData.Helpers
             return rootDirectory;
         }
 
+        private static bool GetFileHeaderRow(DataTable tableSchema, bool containsIdentityColumn, Dictionary<string, FieldValue> dataTypeRow)
+        {
+            foreach (DataRow dr in tableSchema.Rows)
+            {
+                //if(tableSchema.Columns.Contains("IsIdentity"))
+                bool isIdentity = Convert.ToBoolean(dr["IsKey"]); //IsIdentity
+                if (isIdentity) containsIdentityColumn = true;
+
+                //string dataTypeName = dr["DataTypeName"] as string; // DataTypeName is present when created directly from reader
+                string dataTypeName = "System.String";
+                if (dr["DataType"] != null)
+                {
+                    dataTypeName = ((Type)(dr["DataType"])).FullName as string;
+                }
+                //Type dataType = typeof(int);
+
+                string columnName = dr["ColumnName"] as string;
+
+                dataTypeRow.Add(columnName, new FieldValue() { StringValue = dataTypeName });
+            }
+
+            return containsIdentityColumn;
+        }
+
         public static string CreateFilesUsingReader(string guid, IDataReader reader, string temporaryLocation)
         {
             string taskDirectoryName = string.Format("f{0}", guid.Replace("-", string.Empty));
@@ -253,24 +260,7 @@ namespace LargeData.Helpers
                 if (firstRun)
                 {
                     tableSchema = reader.GetSchemaTable();
-                    foreach (DataRow dr in tableSchema.Rows)
-                    {
-                        //if(tableSchema.Columns.Contains("IsIdentity"))
-                        bool isIdentity = Convert.ToBoolean(dr["IsKey"]); //IsIdentity
-                        if (isIdentity) containsIdentityColumn = true;
-
-                        //string dataTypeName = dr["DataTypeName"] as string; // DataTypeName is present when created directly from reader
-                        string dataTypeName = "System.String";
-                        if (dr["DataType"] != null)
-                        {
-                            dataTypeName = ((Type)(dr["DataType"])).FullName as string;
-                        }
-                        //Type dataType = typeof(int);
-
-                        string columnName = dr["ColumnName"] as string;
-
-                        dataTypeRow.Add(columnName, new FieldValue() { StringValue = dataTypeName });
-                    }
+                    containsIdentityColumn = GetFileHeaderRow(tableSchema, containsIdentityColumn, dataTypeRow);
                     firstRun = false; // set it to false for current result set
                 }
                 row = new Dictionary<string, FieldValue>();
