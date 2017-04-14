@@ -30,5 +30,10 @@ namespace LargeData
         /// call back that will accept filters and return the final dataset to be servered
         /// </summary>
         public static Func<List<Filter>, string, DataSet> Callback { get; set; }
+
+        /// <summary>
+        /// call back that will accept filters and return the final datareader to be servered
+        /// </summary>
+        public static Func<List<Filter>, string, IDataReader> CallbackReader { get; set; }
     }
 }

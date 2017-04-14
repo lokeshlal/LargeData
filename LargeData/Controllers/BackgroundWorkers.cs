@@ -16,6 +16,7 @@ namespace LargeData.Controllers
     {
         public static void GenerateFilesForDownload(string guid, List<Filter> filters, CancellationToken c, ICache cache)
         {
+
             try
             {
                 // set status to inprogress
@@ -24,13 +25,22 @@ namespace LargeData.Controllers
                 cache.Remove(guid);
                 cache.Put<TaskState>(guid, taskStatus);
 
-                // get dataset from callback
-                DataSet dataset = ServerSettings.Callback(filters, guid);
                 string temporaryLocation = ServerSettings.TemporaryLocation;
+                string rootDirectory = string.Empty;
 
-                // generate files
-                string rootDirectory = FileHelper.CreateFiles(guid, dataset, temporaryLocation);
-
+                if (ServerSettings.Callback == null)
+                {
+                    // assuming CallbackReader function is set, otherwise an exception will be thrown
+                    IDataReader reader = ServerSettings.CallbackReader(filters, guid);
+                    // generate files
+                    rootDirectory = FileHelper.CreateFilesUsingReader(guid, reader, temporaryLocation);
+                }
+                else
+                {
+                    // get dataset from callback
+                    DataSet dataset = ServerSettings.Callback(filters, guid);
+                    rootDirectory = FileHelper.CreateFiles(guid, dataset, temporaryLocation);
+                }
                 var files = Directory.GetFiles(rootDirectory);
                 int totalFiles = files.Count();
 
@@ -85,6 +95,7 @@ namespace LargeData.Controllers
                 taskStatus.Status = TaskStatus.Failed;
                 cache.Remove(guid);
                 cache.Put<TaskState>(guid, taskStatus);
+                throw ex;
             }
         }
     }

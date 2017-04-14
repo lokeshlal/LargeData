@@ -18,7 +18,10 @@ namespace WebApi
             // include the large data controllers
             GlobalConfiguration.Configuration.Services.Replace(typeof(IAssembliesResolver), new AssemblyResolver());
             // provide a callback which will accept filters and give back the dataset
-            ServerSettings.Callback = DataProvider.GetDataForDownload;
+            // uncomment to test dataset
+            //ServerSettings.Callback = DataProvider.GetDataForDownload;
+            // uncomment to test data reader
+            ServerSettings.CallbackReader = DataProvider.GetDataReaderForDownload;
             // set other large data settings
             ServerSettings.MaxRecordsInAFile = 10;
             ServerSettings.TemporaryLocation = @"E:\TempLocation";
