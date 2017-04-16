@@ -80,6 +80,8 @@ namespace LargeData.Client
                     .OrderBy(f => Convert.ToInt32(Path.GetFileName(f).Split(new char[] { '-' })[0]));
 
             int totalFileCount = dataFile.Count();
+            // keep currentOrder file, to maintain the order of returned dataset
+            int currentOrder = 1;
             foreach (var file in dataFile)
             {
 
@@ -87,6 +89,18 @@ namespace LargeData.Client
                 string[] fileAttributes = fileName.Split(new char[] { '-' });
 
                 int order = Convert.ToInt32(fileAttributes[0]);
+                if (currentOrder < order)
+                {
+                    // if no table is being sent from server, then add an empty table to keep the same orderA
+                    DataTable emptyTable = new DataTable();
+                    emptyTable.TableName = string.Format("Empty-Table-{0}", currentOrder);
+                    dataSet.Tables.Add(emptyTable);
+                    currentOrder++;
+                }
+                else
+                {
+                    currentOrder++;
+                }
                 string tableName = fileAttributes[1];
                 int count = Convert.ToInt32(fileAttributes[2]);
                 bool isContainIdentityColumn = Convert.ToBoolean(fileAttributes[3]);
@@ -298,13 +312,89 @@ namespace LargeData.Client
         }
 
         /// <summary>
+        /// Get the large data set from the rest api
+        /// </summary>
+        /// <param name="filters">Filters to filter the data</param>
+        /// <param name="baseUri">base uri</param>
+        /// <param name="temporaryLocation">temporary location where data will be copied, preferrable is to keep this location encrypted (may be EFS) to make sure all data during transit is secure</param>
+        /// <returns>DataSet returned from server</returns>
+        public async Task<IDataReader> GetDataReaders(List<Filter> filters, string baseUri = null, string temporaryLocation = null)
+        {
+            DataSet dataSet = new DataSet();
+            if (string.IsNullOrEmpty(baseUri))
+            {
+                baseUri = ClientSettings.BaseUri;
+            }
+
+            if (string.IsNullOrEmpty(temporaryLocation))
+            {
+                temporaryLocation = ClientSettings.TemporaryLocation;
+            }
+
+            // rest call
+
+            string guid = await RestClient.Execute<List<Filter>, string>(filters, "api/largedata/begindownload", baseUri);
+
+            // check for 60 seconds for server to finish creating data files
+            DateTime dtWait = DateTime.Now;
+            bool isServerProcessCompleted = false;
+            var listOfFiles = new List<string>();
+            while (DateTime.Now <= dtWait.AddSeconds(60))
+            {
+                listOfFiles = await RestClient.Execute<string, List<string>>(guid, "api/largedata/getfileslisttodownload", baseUri);
+                if (listOfFiles != null && listOfFiles.Count > 0)
+                {
+                    isServerProcessCompleted = true;
+                    break;
+                }
+            }
+            if (!isServerProcessCompleted)
+            {
+                // server time outs. call end download
+                await RestClient.Execute<string, string>(guid, "api/largedata/enddownload", baseUri);
+            }
+
+            string taskDirectoryName = string.Format("f{0}", guid.Replace("-", string.Empty));
+            string rootDirectory = Path.Combine(temporaryLocation, taskDirectoryName);
+            string zipDirectory = Path.Combine(rootDirectory, "zipped");
+            Directory.CreateDirectory(zipDirectory);
+
+
+            Parallel.ForEach(listOfFiles, new ParallelOptions() { MaxDegreeOfParallelism = Environment.ProcessorCount * 2 }, new Action<string>((file) =>
+            {
+                var fileByte = RestClient.ExecuteForByteArray<DownloadFileModel>(new DownloadFileModel() { guid = guid, fileName = file }, "api/largedata/downloadfile", baseUri).GetAwaiter().GetResult();
+                lock (lockObj)
+                {
+                    string zipFileLocal = Path.Combine(rootDirectory, file);
+                    File.WriteAllBytes(zipFileLocal, fileByte);
+                    ZipFile.ExtractToDirectory(zipFileLocal, zipDirectory);
+                    File.Delete(zipFileLocal);
+                }
+            }));
+
+            return new DataReader(zipDirectory, rootDirectory); // dataSet;
+        }
+
+        /// <summary>
         /// send dataset to the server
         /// </summary>
         /// <param name="dataSet">dataset to be sent</param>
         /// <returns>true, if succeed, else false</returns>
-        public async Task<bool> SendData(DataSet dataSet)
+        public async Task<bool> SendData(DataSet dataSet, string baseUri = null, string temporaryLocation = null)
         {
             bool result = false;
+
+            if (string.IsNullOrEmpty(baseUri))
+            {
+                baseUri = ClientSettings.BaseUri;
+            }
+
+            if (string.IsNullOrEmpty(temporaryLocation))
+            {
+                temporaryLocation = ClientSettings.TemporaryLocation;
+            }
+
+
             // TODO
             return result;
         }

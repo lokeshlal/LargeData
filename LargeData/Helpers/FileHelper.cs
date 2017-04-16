@@ -13,6 +13,7 @@ namespace LargeData.Helpers
     {
         public static string CreateFiles(string guid, DataSet dataset, string temporaryLocation)
         {
+            List<string> headerFileContent = new List<string>();
             string taskDirectoryName = string.Format("f{0}", guid.Replace("-", string.Empty));
             string rootDirectory = Path.Combine(temporaryLocation, taskDirectoryName);
             Directory.CreateDirectory(rootDirectory);
@@ -21,9 +22,10 @@ namespace LargeData.Helpers
 
             foreach (DataTable dt in dataset.Tables)
             {
+                bool fileCreated = false;
                 int fileCount = 1;
                 string tableName = !string.IsNullOrEmpty(dt.TableName) ? dt.TableName : string.Format("Table{0}", order);
-
+                headerFileContent.Add(tableName);
 
                 var reader = dt.CreateDataReader();
                 DataTable tableSchema = reader.GetSchemaTable();
@@ -49,10 +51,17 @@ namespace LargeData.Helpers
                     if (recordsProcessed >= ServerSettings.MaxRecordsInAFile)
                     {
                         recordsProcessed = FileHelper.CreateFile(rootDirectory, order, ref fileCount, tableName, containsIdentityColumn, dataTypeRow, rows);
+                        fileCreated = true;
                     }
                 }
 
                 if (recordsProcessed > 0)
+                {
+                    recordsProcessed = FileHelper.CreateFile(rootDirectory, order, ref fileCount, tableName, containsIdentityColumn, dataTypeRow, rows);
+                    fileCreated = true;
+                }
+
+                if (!fileCreated)
                 {
                     recordsProcessed = FileHelper.CreateFile(rootDirectory, order, ref fileCount, tableName, containsIdentityColumn, dataTypeRow, rows);
                 }
@@ -60,12 +69,13 @@ namespace LargeData.Helpers
                 reader.Close();
                 order++;
             }
-
+            //CreateHeaderFile(headerFileContent, rootDirectory);
             return rootDirectory;
         }
 
         public static string CreateFilesUsingReader(string guid, IDataReader reader, string temporaryLocation)
         {
+            List<string> headerFileContent = new List<string>();
             string taskDirectoryName = string.Format("f{0}", guid.Replace("-", string.Empty));
             string rootDirectory = Path.Combine(temporaryLocation, taskDirectoryName);
             Directory.CreateDirectory(rootDirectory);
@@ -75,6 +85,8 @@ namespace LargeData.Helpers
 
             // first table
             string tableName = string.Format("Table{0}", order);
+            // assuming at least one table will be there in the data reader
+            headerFileContent.Add(tableName);
             bool firstRun = true;
             int recordsProcessed = 0;
             Dictionary<string, FieldValue> row = new Dictionary<string, FieldValue>();
@@ -89,6 +101,7 @@ namespace LargeData.Helpers
             {
                 // reset variables for next result set
                 tableName = string.Format("Table{0}", order);
+                headerFileContent.Add(tableName);
                 firstRun = true;
                 recordsProcessed = 0;
                 rows = new List<Dictionary<string, FieldValue>>();
@@ -98,7 +111,17 @@ namespace LargeData.Helpers
                 ConvertReaderToFile(reader, rootDirectory, ref order, ref fileCount, tableName, ref firstRun, ref recordsProcessed, ref row, rows, ref tableSchema, ref containsIdentityColumn, dataTypeRow);
             }
             reader.Close();
+            //CreateHeaderFile(headerFileContent, rootDirectory);
             return rootDirectory;
+        }
+
+        public static void CreateHeaderFile(List<string> headerContent, string rootDirectory)
+        {
+            // order is 0 for header
+            // filecount = 0
+            // keeping format consistant with other file names
+            string headerFileName = Path.Combine(rootDirectory, CreateFile(0, "header", 0, false));
+            File.WriteAllLines(headerFileName, headerContent);
         }
 
         /// <summary>
@@ -118,6 +141,7 @@ namespace LargeData.Helpers
         /// <param name="dataTypeRow">, not required here, refactoring required</param>
         private static void ConvertReaderToFile(IDataReader reader, string rootDirectory, ref int order, ref int fileCount, string tableName, ref bool firstRun, ref int recordsProcessed, ref Dictionary<string, FieldValue> row, List<Dictionary<string, FieldValue>> rows, ref DataTable tableSchema, ref bool containsIdentityColumn, Dictionary<string, FieldValue> dataTypeRow)
         {
+            bool fileCreated = false;
             while (reader.Read())
             {
                 if (firstRun)
@@ -135,9 +159,15 @@ namespace LargeData.Helpers
                 if (recordsProcessed >= ServerSettings.MaxRecordsInAFile)
                 {
                     recordsProcessed = FileHelper.CreateFile(rootDirectory, order, ref fileCount, tableName, containsIdentityColumn, dataTypeRow, rows);
+                    fileCreated = true;
                 }
             }
             if (recordsProcessed > 0)
+            {
+                recordsProcessed = FileHelper.CreateFile(rootDirectory, order, ref fileCount, tableName, containsIdentityColumn, dataTypeRow, rows);
+                fileCreated = true;
+            }
+            if (!fileCreated)
             {
                 recordsProcessed = FileHelper.CreateFile(rootDirectory, order, ref fileCount, tableName, containsIdentityColumn, dataTypeRow, rows);
             }

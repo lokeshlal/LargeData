@@ -60,6 +60,7 @@
     <Compile Include="Client\RestClient.cs" />
     <Compile Include="Controllers\BackgroundWorkers.cs" />
     <Compile Include="Controllers\LargeDataController.cs" />
+    <Compile Include="DataReader.cs" />
     <Compile Include="FileManagement\FileHandler.cs" />
     <Compile Include="Helpers\FileHelper.cs" />
     <Compile Include="Helpers\TypeHelper.cs" />
