@@ -54,3 +54,19 @@ Staging location, where temporary files will be stored
 ```csharp
 ServerSettings.TemporaryLocation = @"E:\TempLocation";
 ```
+
+General server configuration
+```csharp
+// Maximum number of records in each file
+ServerSettings.MaxRecordsInAFile = 10;
+```
+
+#### Client configuration
+
+```csharp
+// Either this can be set once or passed in Get/Set Data methods
+// Rest API Base URI
+ClientSettings.BaseUri = "http://api.base.com"
+// Temporary location for staging files
+ClientSettings.TemporaryLocation = @"E:\location"
+```
