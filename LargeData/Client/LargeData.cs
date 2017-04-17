@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json;
+﻿using LargeData.Helpers;
+using LargeData.Models;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -10,6 +12,9 @@ using System.Threading.Tasks;
 
 namespace LargeData.Client
 {
+    /// <summary>
+    /// client large data class to initiate get and send dataset from server
+    /// </summary>
     public class LargeData
     {
         private static readonly object lockObj = new object();
@@ -109,11 +114,7 @@ namespace LargeData.Client
                 StreamReader sr = new StreamReader(file);
                 using (JsonTextReader jsonReader = new JsonTextReader(sr))
                 {
-                    JsonSerializer serializer = new JsonSerializer();
-                    serializer.DateTimeZoneHandling = DateTimeZoneHandling.RoundtripKind;
-                    serializer.DateFormatHandling = DateFormatHandling.IsoDateFormat;
-                    serializer.DateParseHandling = DateParseHandling.DateTimeOffset;
-                    serializer.Culture = System.Globalization.CultureInfo.InvariantCulture;
+                    JsonSerializer serializer = FileHelper.JsonSerializerSettings();
 
                     List<Dictionary<string, FieldValue>> rowCollection = serializer.Deserialize<List<Dictionary<string, FieldValue>>>(jsonReader);
 
@@ -130,187 +131,12 @@ namespace LargeData.Client
                         dataSet.Tables.Add(dt);
                     }
 
-                    List<string> fields = new List<string>();
-                    List<string> uTablefield = new List<string>();
-                    List<string> uTableUpdatedField = new List<string>();
-
-
-                    bool firstRun = true;
-                    foreach (var row in rowCollection)
-                    {
-                        if (firstRun && !existingTable) // only for new tables
-                        {
-                            foreach (var key in row.Keys)
-                            {
-
-                                string columnNameForQuery = string.Format("[{0}]", key);
-                                fields.Add(columnNameForQuery);
-                                uTablefield.Add(string.Format("U.{0}", columnNameForQuery));
-                                if (columnNameForQuery.ToLower() != "[id]")
-                                {
-                                    uTableUpdatedField.Add(string.Format("T.{0} = U.{0}", columnNameForQuery));
-                                }
-
-                                Type dataType = typeof(int);
-                                switch (Convert.ToString(row[key].StringValue))
-                                {
-                                    case "System.Int32": dataType = typeof(int); break;
-                                    case "System.Int64": dataType = typeof(long); break;
-                                    case "System.DateTimeOffset": dataType = typeof(DateTimeOffset); break;
-                                    case "System.DateTime": dataType = typeof(DateTime); break;
-                                    case "System.String": dataType = typeof(string); break;
-                                    case "System.Boolean": dataType = typeof(bool); break;
-                                    case "System.Byte[]": dataType = typeof(byte[]); break;
-                                    case "System.Guid": dataType = typeof(Guid); break;
-                                    case "System.Decimal":
-                                    case "System.Single":
-                                    case "System.Double":
-                                        dataType = typeof(decimal); break;
-                                }
-                                var dataColumn = dt.Columns.Add(key, dataType);
-                                dataColumn.AllowDBNull = true; // allowing null
-                            }
-                            firstRun = !firstRun;
-                        }
-                        else
-                        {
-                            var newRow = dt.NewRow();
-                            foreach (var key in row.Keys)
-                            {
-                                var value = row[key];
-                                if (value == null)
-                                {
-                                    newRow[key] = DBNull.Value;
-                                    continue;
-                                }
-
-                                if (dt.Columns.Contains(key))
-                                {
-                                    // use switch instead of multiple if conditions
-                                    if (dt.Columns[key].DataType == typeof(byte[]))
-                                    {
-                                        if (value.ByteValue == null)
-                                        {
-                                            newRow[key] = DBNull.Value;
-                                        }
-                                        else
-                                        {
-                                            newRow[key] = value.ByteValue;
-                                        }
-                                    }
-                                    else if (dt.Columns[key].DataType == typeof(Guid))
-                                    {
-                                        if (value.GuidValue == null)
-                                        {
-                                            newRow[key] = DBNull.Value;
-                                        }
-                                        else
-                                        {
-                                            newRow[key] = value.GuidValue;
-                                        }
-                                    }
-                                    else if (dt.Columns[key].DataType == typeof(bool))
-                                    {
-                                        if (value.BoolValue == null)
-                                        {
-                                            newRow[key] = DBNull.Value;
-                                        }
-                                        else
-                                        {
-                                            newRow[key] = value.BoolValue;
-                                        }
-                                    }
-                                    else if (dt.Columns[key].DataType == typeof(Int32))
-                                    {
-                                        if (value.IntValue == null)
-                                        {
-                                            newRow[key] = DBNull.Value;
-                                        }
-                                        else
-                                        {
-                                            newRow[key] = value.IntValue;
-                                        }
-                                    }
-                                    else if (dt.Columns[key].DataType == typeof(Int64))
-                                    {
-                                        if (value.LongValue == null)
-                                        {
-                                            newRow[key] = DBNull.Value;
-                                        }
-                                        else
-                                        {
-                                            newRow[key] = value.LongValue;
-                                        }
-                                    }
-                                    else if (dt.Columns[key].DataType == typeof(DateTimeOffset))
-                                    {
-                                        if (value.DateTimeOffsetValue == null)
-                                        {
-                                            newRow[key] = DBNull.Value;
-                                        }
-                                        else
-                                        {
-                                            newRow[key] = value.DateTimeOffsetValue;
-                                        }
-                                    }
-                                    else if (dt.Columns[key].DataType == typeof(DateTime))
-                                    {
-                                        if (value.DateTimeValue == null)
-                                        {
-                                            newRow[key] = DBNull.Value;
-                                        }
-                                        else
-                                        {
-                                            newRow[key] = value.DateTimeValue;
-                                        }
-                                    }
-                                    else if (dt.Columns[key].DataType == typeof(decimal)
-                                        || dt.Columns[key].DataType == typeof(double)
-                                        || dt.Columns[key].DataType == typeof(Single)
-                                        || dt.Columns[key].DataType == typeof(float))
-                                    {
-                                        if (value.DecimalValue == null)
-                                        {
-                                            newRow[key] = DBNull.Value;
-                                        }
-                                        else
-                                        {
-                                            newRow[key] = value.DecimalValue;
-                                        }
-                                    }
-                                    else if (dt.Columns[key].DataType == typeof(string))
-                                    {
-                                        if (value.StringValue == null)
-                                        {
-                                            newRow[key] = DBNull.Value;
-                                        }
-                                        else
-                                        {
-                                            newRow[key] = value.StringValue;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        if (value.ByteValue == null)
-                                        {
-                                            newRow[key] = DBNull.Value;
-                                        }
-                                        else
-                                        {
-                                            newRow[key] = row[key];
-                                        }
-                                    }
-                                }
-                            }
-                            dt.Rows.Add(newRow);
-                        }
-                    }
+                    FileHelper.PopulateTable(rowCollection, dt, existingTable);
                 }
             }
             Directory.Delete(rootDirectory, true);
             return dataSet;
         }
-
         /// <summary>
         /// Get the large data set from the rest api
         /// </summary>
@@ -380,10 +206,8 @@ namespace LargeData.Client
         /// </summary>
         /// <param name="dataSet">dataset to be sent</param>
         /// <returns>true, if succeed, else false</returns>
-        public async Task<bool> SendData(DataSet dataSet, string baseUri = null, string temporaryLocation = null)
+        public async Task<bool> SendData(DataSet dataSet, List<Filter> filters, string baseUri = null, string temporaryLocation = null)
         {
-            bool result = false;
-
             if (string.IsNullOrEmpty(baseUri))
             {
                 baseUri = ClientSettings.BaseUri;
@@ -394,9 +218,132 @@ namespace LargeData.Client
                 temporaryLocation = ClientSettings.TemporaryLocation;
             }
 
+            string guid = Guid.NewGuid().ToString();
 
+            var reader = dataSet.CreateDataReader();
+
+            string rootDirectory = FileHelper.CreateFilesUsingReader(guid, reader, temporaryLocation);
+            var files = Directory.GetFiles(rootDirectory);
+            int totalFiles = files.Count();
+
+            // zip files in batches
+            var totalZipFiles = (totalFiles / 10 + (totalFiles % 10 > 0 ? 1 : 0));
+            List<string> zipFileList = new List<string>();
+            List<string> zipFileNameList = new List<string>();
+
+            string randomNumber = Guid.NewGuid().ToString().Replace("-", string.Empty);
+            string zipDirectoryName = "zipped" + randomNumber;
+            string zipFileName = "zippedFile" + randomNumber + ".zip";
+            string zipDirectory = Path.Combine(rootDirectory, zipDirectoryName);
+            string zipDirectoryFormat = zipDirectory + "{0}"; ;
+            var zipFileFormattemp = "zippedFile" + randomNumber + "{0}.zip";
+            Directory.CreateDirectory(zipDirectory);
+
+            string zipFile = Path.Combine(rootDirectory, zipFileName);
+            string zipFileFormat = Path.Combine(rootDirectory, zipFileFormattemp);
+
+            for (int i = 0; i < totalZipFiles; i++)
+            {
+                var newDirectory = string.Format(zipDirectoryFormat, i);
+                var newFile = string.Format(zipFileFormat, i);
+                if (!Directory.Exists(newDirectory))
+                {
+                    Directory.CreateDirectory(newDirectory);
+                }
+                for (int j = i * 10; j < ((i * 10) + 10) && j < totalFiles; j++)
+                {
+                    var newFileName = Path.Combine(newDirectory, Path.GetFileName(files[j]));
+                    File.Move(files[j], newFileName);
+                }
+                ZipFile.CreateFromDirectory(newDirectory, newFile);
+                zipFileNameList.Add(Path.GetFileName(newFile));
+                zipFileList.Add(newFile);
+                Directory.Delete(newDirectory, true);
+            }
+
+            Directory.Delete(zipDirectory, true);
+
+
+            int totalFileCount = zipFileList.Count;
+            int filesDownloaded = 0;
+
+            int maxBytesInAFile = ClientSettings.MaxFileSize > 0 ? ClientSettings.MaxFileSize : 102400; // maximum size 100 KB
+
+            string serverGuid = await RestClient.Execute<List<Filter>, string>(filters, "api/largedata/beginupload", baseUri);
+
+            Parallel.ForEach(zipFileList, new ParallelOptions() { MaxDegreeOfParallelism = Environment.ProcessorCount * 2 }, new Action<string>((file) =>
+            {
+                if (File.Exists(file))
+                {
+                    FileInfo fileInfo = new FileInfo(file);
+                    if (fileInfo.Length <= maxBytesInAFile) // maximum size 100 KB
+                    {
+                        RestClient.Execute<string, bool>(serverGuid, file, "api/largedata/postfile", baseUri).GetAwaiter().GetResult();
+                    }
+                    else
+                    {
+                        // split the file and upload
+                        // this most probably be the case, when uploading zip file containing project structure row
+                        // as in most cases upload speed is slow and download is acceptable (and first response is receieved avoiding rest api time out
+                        var baseDirectory = Path.GetDirectoryName(file);
+                        List<string> packets = new List<string>();
+
+                        FileStream fs = new FileStream(file, FileMode.Open, FileAccess.Read);
+
+                        int noOfFiles = (int)Math.Ceiling((double)fileInfo.Length / maxBytesInAFile);
+                        for (int fileCounter = 0; fileCounter < noOfFiles; fileCounter++)
+                        {
+                            string baseFileName = Path.GetFileNameWithoutExtension(file);
+                            string Extension = Path.GetExtension(file);
+
+                            string packetName = baseDirectory + "\\" + fileCounter.ToString() + "-" + baseFileName + ".tmp";
+                            FileStream outputFile = new FileStream(packetName, FileMode.Create, FileAccess.Write);
+                            int bytesRead = 0;
+                            byte[] buffer = new byte[maxBytesInAFile];
+
+                            if ((bytesRead = fs.Read(buffer, 0, maxBytesInAFile)) > 0)
+                            {
+                                outputFile.Write(buffer, 0, bytesRead);
+                                packets.Add(packetName);
+                            }
+                            outputFile.Close();
+
+                        }
+                        fs.Close();
+                        // remove this file from the zip file packet
+                        zipFileNameList.Remove(Path.GetFileName(file));
+                        List<string> packetCreated = new List<string>();
+                        foreach (var packet in packets)
+                        {
+                            // add individual packets
+                            packetCreated.Add(Path.GetFileName(packet));
+                            RestClient.Execute<string, bool>(serverGuid, packet, "api/largedata/uploadfile", baseUri).GetAwaiter().GetResult();
+                            // delete the packet from local folder
+                            File.Delete(packet);
+                        }
+
+                        zipFileNameList.Add(string.Join("|", packetCreated.ToArray()));
+                    }
+                    File.Delete(file);
+                }
+                filesDownloaded++;
+            }));
+
+            var isProcessStarted = await RestClient.Execute<UploadModel, bool>(new UploadModel() { guid = serverGuid, files = zipFileNameList }, "api/largedata/processuploadedfiles", baseUri);
+
+            DateTime dtWait = DateTime.Now;
+            bool isServerProcessCompleted = false;
+            while (DateTime.Now <= dtWait.AddSeconds(60))
+            {
+                isServerProcessCompleted = await RestClient.Execute<string, bool>(serverGuid, "api/largedata/getuploadprocessstatus", baseUri);
+            }
+            if (!isServerProcessCompleted)
+            {
+                // server time outs. call end download
+                await RestClient.Execute<string, string>(guid, "api/largedata/endupload", baseUri);
+            }
             // TODO
-            return result;
+            return isServerProcessCompleted;
         }
     }
 }
