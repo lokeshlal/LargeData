@@ -93,9 +93,14 @@ LargeData provides output in 2 format,
 
 REST APIs will have to provide a method to handle all incoming upload and download request. This will be a single method for all sort of upload and download request. So to handle various scenarios, this method also accept List&lt;Filter&gt; (as mentioned in section "Filter class") to differentiate between different type of request.
 
+Please note, background worker process is running in ASP.NET context, this process can be triggered via Hangfire, Quartz or a separate windows service could also be created (based upon the requirements, in my original code, I have written a windows service for the background process, however I fell hangfire is a good fit).
+
 #### Sample
 
-Please have a look at the Client and WebApi project on how to use this library.
+Please have a look at the Client and 
+
+
+bApi project on how to use this library.
 
 Client project contains code of how to trigger upload and download request.
 
