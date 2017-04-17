@@ -11,7 +11,9 @@ To solve this performance bottleneck, first thing is to get rid of sync framewor
 This part is not covered in the above library, that is, how to keep track of what changed.
 So we already have a "rowversion" column in all the tables (we were using SQL server), which is always incremental across the DB. So to keep track of childs, what we need to do is to add a LastSyncedOn column in the parent table (for all the child table) and set LastSyncedOn to @DBTS. which means last time database was synced on that this timestamp and if any child table rowversion is greater than this value, then it a new row (either inserted or updated).
 
-On the basis of this we created the DataSet, both at client and server. Feed the dataset to the above utility and send it across.
+On the basis of this we created the DataSet, both at client and server. Feed the dataset to the above utility and send it across. 
+
+After doing these changes, we were able to download the same data set in &lt;5 minutes and upload in &lt;10 minutes (depend upon the changes done in the data at the client side).
 
 At some places, we also ended up using datareader, as dataset was giving out of memory exception.
 
