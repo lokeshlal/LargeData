@@ -79,6 +79,20 @@ Filters can be used in the Callbacks to retrieve the data and to process the dat
 2. Database filters
 3. Tag to be associated with the request
 
+#### LargeData structure
+
+LargeData is a single assembly containing code for both client as well server. 
+Client directly references the assembly and uses LargeData.Client.LargeData class to send and recieve the datasets.
+Server also references the assembly and registers the LargeData controller in the Global class (as mentioned in above section "Server Configuration")
+
+![LargeData Structure](https://raw.githubusercontent.com/lokeshlal/LargeData/master/largedata_structure.png)
+
+LargeData provides output in 2 format, 
+1. Data set (generally for smaller set of data) 
+2. Data reader (for large data sets)
+
+REST APIs will have to provide a method to handle all incoming upload and download request. This will be a single method for all sort of upload and download request. So to handle various scenarios, this method also accept List&lt;Filter&gt; (as mentioned in section "Filter class") to differentiate between different type of request.
+
 #### Sample
 
 Please have a look at the Client and WebApi project on how to use this library.
