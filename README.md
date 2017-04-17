@@ -97,11 +97,6 @@ Please note, background worker process is running in ASP.NET context, this proce
 
 #### Sample
 
-Please have a look at the Client and 
-
-
-bApi project on how to use this library.
-
+Please have a look at the Client and WebApi project on how to use this library.
 Client project contains code of how to trigger upload and download request.
-
 WebApi project contains how to process upload and download request.
