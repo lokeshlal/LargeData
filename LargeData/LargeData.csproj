@@ -63,12 +63,13 @@
     <Compile Include="DataReader.cs" />
     <Compile Include="FileManagement\FileHandler.cs" />
     <Compile Include="Helpers\FileHelper.cs" />
-    <Compile Include="Helpers\TypeHelper.cs" />
     <Compile Include="Models\DownloadFileModel.cs" />
     <Compile Include="Models\FieldValue.cs" />
     <Compile Include="Models\Filter.cs" />
     <Compile Include="Models\TaskState.cs" />
     <Compile Include="Models\TaskStatus.cs" />
+    <Compile Include="Models\TaskType.cs" />
+    <Compile Include="Models\UploadModel.cs" />
     <Compile Include="Settings\ClientSettings.cs" />
     <Compile Include="Settings\ServerSettings.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

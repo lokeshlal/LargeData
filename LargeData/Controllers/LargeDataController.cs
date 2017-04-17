@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using LargeData.Models;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -127,7 +128,92 @@ namespace LargeData.Controllers
         #endregion
 
         #region methods to upload the dataset
+        [HttpPost]
+        public Task<string> BeginUpload([FromBody] List<Filter> filters)
+        {
+            string guid = Guid.NewGuid().ToString();
 
+            cache.Put(guid, new TaskState()
+            {
+                Guid = guid,
+                HeaderInfo = string.Empty,
+                FilesToTransfer = new List<string>(),
+                OriginalFileList = new List<string>(),
+                Status = TaskStatus.Submitted,
+                Type = TaskType.Upload,
+                Filters = filters // adding filters, as this will help in distinguishing kind of data upload, for example: upload for a specific user, or for a specific functionality, etc
+            });
+
+            // create upload path for this upload
+            string rootDirectory = GetRootDirectoryForGuid(guid);
+            Directory.CreateDirectory(rootDirectory);
+
+            return Task.FromResult(guid);
+        }
+
+        private static string GetRootDirectoryForGuid(string guid)
+        {
+            string temporaryLocation = ServerSettings.TemporaryLocation;
+            string taskDirectoryName = string.Format("f{0}", guid.Replace("-", string.Empty));
+            string rootDirectory = Path.Combine(temporaryLocation, taskDirectoryName);
+            return rootDirectory;
+        }
+
+        [HttpPost]
+        public Task<bool> PostFile()
+        {
+            string guid = JsonConvert.DeserializeObject<string>(Request.Headers.GetValues("objectValue").FirstOrDefault());
+            string rootDirectory = GetRootDirectoryForGuid(guid);
+            HttpFileCollection hfc = System.Web.HttpContext.Current.Request.Files;
+            if (hfc.Count > 0)
+            {
+                HttpPostedFile file = hfc[0];
+                var uploadedFilePath = Path.Combine(rootDirectory, file.FileName);
+                file.SaveAs(uploadedFilePath);
+            }
+            return Task.FromResult(true);
+        }
+
+        [HttpPost]
+        public Task<bool> ProcessUploadedFiles(UploadModel model)
+        {
+            string guid = model.guid;
+            List<string> files = model.files;
+
+            HostingEnvironment.QueueBackgroundWorkItem(c =>
+            {
+                // process the uploaded files
+                BackgroundWorkers.ProcessUploadedFiles(guid, files, cache);
+            });
+            return Task.FromResult(true);
+        }
+
+        [HttpPost]
+        public Task<bool> GetUploadProcessStatus([FromBody] string guid)
+        {
+            var response = false;
+            var taskState = cache.Get<TaskState>(guid);
+            if (taskState != null && !(taskState != null && taskState.Status == TaskStatus.Failed))
+            {
+                if (taskState.Status == TaskStatus.Completed) response = true;
+            }
+            else
+            {
+                cache.Remove(guid);
+                throw new Exception("Process failed. Please try again.");
+            }
+            return Task.FromResult(response);
+        }
+
+        [HttpPost]
+        public Task<bool> EndUpload([FromBody] string guid)
+        {
+            cache.Remove(guid);
+            // clear all files in the folder, if any remaining
+            string rootDirectory = GetRootDirectoryForGuid(guid);
+            Directory.Delete(rootDirectory, true);
+            return Task.FromResult(true);
+        }
         #endregion
     }
 }

@@ -4,11 +4,16 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace LargeData.Client
 {
+    /// <summary>
+    /// rest client to call APIs
+    /// can be replace and extended to add custom headers
+    /// </summary>
     public class RestClient
     {
         /// <summary>
@@ -61,5 +66,42 @@ namespace LargeData.Client
             }
             return responseObj;
         }
+
+        public static async Task<V> Execute<T, V>(T requestObject, string fileName, string requestUri, string baseUrl)
+        {
+            V responseObj = default(V);
+            using (HttpClient client = new HttpClient())
+            {
+                MultipartFormDataContent content = new MultipartFormDataContent();
+                using (var fileStream = File.Open(fileName, FileMode.Open))
+                {
+                    var fileInfo = new FileInfo(fileName);
+                    content.Add(new StreamContent(fileStream), "\"file\"", string.Format("\"{0}\"", fileInfo.Name));
+
+                    client.BaseAddress = new Uri(baseUrl);
+                    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("multipart/form-data"));
+                    client.DefaultRequestHeaders.Add("objectValue", JsonConvert.SerializeObject(requestObject));
+
+                    var response = await client.PostAsync(requestUri, content);
+
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        throw new HttpRequestException("Server failes to respond");
+                    }
+
+                    var responseStream = await response.Content.ReadAsStreamAsync();
+                    using (StreamReader streamReader = new StreamReader(responseStream))
+                    {
+                        using (JsonReader jsonReader = new JsonTextReader(streamReader))
+                        {
+                            JsonSerializer serializer = new JsonSerializer();
+                            responseObj = serializer.Deserialize<V>(jsonReader);
+                        }
+                    }
+                }
+            }
+            return responseObj;
+        }
+
     }
 }

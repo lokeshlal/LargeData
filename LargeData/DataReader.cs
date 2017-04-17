@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using LargeData.Helpers;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -68,177 +69,14 @@ namespace LargeData
                 StreamReader sr = new StreamReader(file);
                 using (JsonTextReader jsonReader = new JsonTextReader(sr))
                 {
-                    JsonSerializer serializer = new JsonSerializer();
-                    serializer.DateTimeZoneHandling = DateTimeZoneHandling.RoundtripKind;
-                    serializer.DateFormatHandling = DateFormatHandling.IsoDateFormat;
-                    serializer.DateParseHandling = DateParseHandling.DateTimeOffset;
-                    serializer.Culture = System.Globalization.CultureInfo.InvariantCulture;
+                    JsonSerializer serializer = FileHelper.JsonSerializerSettings();
 
                     List<Dictionary<string, FieldValue>> rowCollection = serializer.Deserialize<List<Dictionary<string, FieldValue>>>(jsonReader);
 
                     cachedRows = new DataTable();
 
-                    bool firstRun = true;
-                    foreach (var row in rowCollection)
-                    {
-                        if (firstRun) // only for new tables
-                        {
-                            foreach (var key in row.Keys)
-                            {
-                                Type dataType = typeof(int);
-                                switch (Convert.ToString(row[key].StringValue))
-                                {
-                                    case "System.Int32": dataType = typeof(int); break;
-                                    case "System.Int64": dataType = typeof(long); break;
-                                    case "System.DateTimeOffset": dataType = typeof(DateTimeOffset); break;
-                                    case "System.DateTime": dataType = typeof(DateTime); break;
-                                    case "System.String": dataType = typeof(string); break;
-                                    case "System.Boolean": dataType = typeof(bool); break;
-                                    case "System.Byte[]": dataType = typeof(byte[]); break;
-                                    case "System.Guid": dataType = typeof(Guid); break;
-                                    case "System.Decimal":
-                                    case "System.Single":
-                                    case "System.Double":
-                                        dataType = typeof(decimal); break;
-                                }
-                                var dataColumn = cachedRows.Columns.Add(key, dataType);
-                                dataColumn.AllowDBNull = true; // allowing null
-                            }
-                            firstRun = !firstRun;
-                        }
-                        else
-                        {
-                            var newRow = cachedRows.NewRow();
-                            foreach (var key in row.Keys)
-                            {
-                                var value = row[key];
-                                if (value == null)
-                                {
-                                    newRow[key] = DBNull.Value;
-                                    continue;
-                                }
+                    FileHelper.PopulateTable(rowCollection, cachedRows);
 
-                                if (cachedRows.Columns.Contains(key))
-                                {
-                                    // use switch instead of multiple if conditions
-                                    if (cachedRows.Columns[key].DataType == typeof(byte[]))
-                                    {
-                                        if (value.ByteValue == null)
-                                        {
-                                            newRow[key] = DBNull.Value;
-                                        }
-                                        else
-                                        {
-                                            newRow[key] = value.ByteValue;
-                                        }
-                                    }
-                                    else if (cachedRows.Columns[key].DataType == typeof(Guid))
-                                    {
-                                        if (value.GuidValue == null)
-                                        {
-                                            newRow[key] = DBNull.Value;
-                                        }
-                                        else
-                                        {
-                                            newRow[key] = value.GuidValue;
-                                        }
-                                    }
-                                    else if (cachedRows.Columns[key].DataType == typeof(bool))
-                                    {
-                                        if (value.BoolValue == null)
-                                        {
-                                            newRow[key] = DBNull.Value;
-                                        }
-                                        else
-                                        {
-                                            newRow[key] = value.BoolValue;
-                                        }
-                                    }
-                                    else if (cachedRows.Columns[key].DataType == typeof(Int32))
-                                    {
-                                        if (value.IntValue == null)
-                                        {
-                                            newRow[key] = DBNull.Value;
-                                        }
-                                        else
-                                        {
-                                            newRow[key] = value.IntValue;
-                                        }
-                                    }
-                                    else if (cachedRows.Columns[key].DataType == typeof(Int64))
-                                    {
-                                        if (value.LongValue == null)
-                                        {
-                                            newRow[key] = DBNull.Value;
-                                        }
-                                        else
-                                        {
-                                            newRow[key] = value.LongValue;
-                                        }
-                                    }
-                                    else if (cachedRows.Columns[key].DataType == typeof(DateTimeOffset))
-                                    {
-                                        if (value.DateTimeOffsetValue == null)
-                                        {
-                                            newRow[key] = DBNull.Value;
-                                        }
-                                        else
-                                        {
-                                            newRow[key] = value.DateTimeOffsetValue;
-                                        }
-                                    }
-                                    else if (cachedRows.Columns[key].DataType == typeof(DateTime))
-                                    {
-                                        if (value.DateTimeValue == null)
-                                        {
-                                            newRow[key] = DBNull.Value;
-                                        }
-                                        else
-                                        {
-                                            newRow[key] = value.DateTimeValue;
-                                        }
-                                    }
-                                    else if (cachedRows.Columns[key].DataType == typeof(decimal)
-                                        || cachedRows.Columns[key].DataType == typeof(double)
-                                        || cachedRows.Columns[key].DataType == typeof(Single)
-                                        || cachedRows.Columns[key].DataType == typeof(float))
-                                    {
-                                        if (value.DecimalValue == null)
-                                        {
-                                            newRow[key] = DBNull.Value;
-                                        }
-                                        else
-                                        {
-                                            newRow[key] = value.DecimalValue;
-                                        }
-                                    }
-                                    else if (cachedRows.Columns[key].DataType == typeof(string))
-                                    {
-                                        if (value.StringValue == null)
-                                        {
-                                            newRow[key] = DBNull.Value;
-                                        }
-                                        else
-                                        {
-                                            newRow[key] = value.StringValue;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        if (value.ByteValue == null)
-                                        {
-                                            newRow[key] = DBNull.Value;
-                                        }
-                                        else
-                                        {
-                                            newRow[key] = row[key];
-                                        }
-                                    }
-                                }
-                            }
-                            cachedRows.Rows.Add(newRow);
-                        }
-                    }
                     schema = cachedRows.CreateDataReader().GetSchemaTable();
                     if (CurrentFileRowIndex < cachedRows.Rows.Count)
                     {

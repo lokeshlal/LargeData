@@ -343,13 +343,187 @@ namespace LargeData.Helpers
             // serialize JSON directly to a file
             using (StreamWriter file = File.CreateText(fileName))
             {
-                JsonSerializer serializer = new JsonSerializer();
-                serializer.Culture = System.Globalization.CultureInfo.InvariantCulture;
-                serializer.DateTimeZoneHandling = DateTimeZoneHandling.RoundtripKind;
-                serializer.DateFormatHandling = DateFormatHandling.IsoDateFormat;
-                serializer.DateParseHandling = DateParseHandling.DateTimeOffset;
+                JsonSerializer serializer = FileHelper.JsonSerializerSettings();
                 serializer.Serialize(file, obj);
             }
         }
+
+
+        public static void PopulateTable(List<Dictionary<string, FieldValue>> rowCollection, DataTable dt, bool existingTable = false)
+        {
+            bool firstRun = true;
+            foreach (var row in rowCollection)
+            {
+                if (firstRun && !existingTable) // only for new tables
+                {
+                    foreach (var key in row.Keys)
+                    {
+
+                        Type dataType = typeof(int);
+                        switch (Convert.ToString(row[key].StringValue))
+                        {
+                            case "System.Int32": dataType = typeof(int); break;
+                            case "System.Int64": dataType = typeof(long); break;
+                            case "System.DateTimeOffset": dataType = typeof(DateTimeOffset); break;
+                            case "System;.DateTime": dataType = typeof(DateTime); break;
+                            case "System.String": dataType = typeof(string); break;
+                            case "System.Boolean": dataType = typeof(bool); break;
+                            case "System.Byte[]": dataType = typeof(byte[]); break;
+                            case "System.Guid": dataType = typeof(Guid); break;
+                            case "System.Decimal":
+                            case "System.Single":
+                            case "System.Double":
+                                dataType = typeof(decimal); break;
+                        }
+                        var dataColumn = dt.Columns.Add(key, dataType);
+                        dataColumn.AllowDBNull = true; // allowing null
+                    }
+                    firstRun = !firstRun;
+                }
+                else
+                {
+                    var newRow = dt.NewRow();
+                    foreach (var key in row.Keys)
+                    {
+                        var value = row[key];
+                        if (value == null)
+                        {
+                            newRow[key] = DBNull.Value;
+                            continue;
+                        }
+
+                        if (dt.Columns.Contains(key))
+                        {
+                            // use switch instead of multiple if conditions
+                            if (dt.Columns[key].DataType == typeof(byte[]))
+                            {
+                                if (value.ByteValue == null)
+                                {
+                                    newRow[key] = DBNull.Value;
+                                }
+                                else
+                                {
+                                    newRow[key] = value.ByteValue;
+                                }
+                            }
+                            else if (dt.Columns[key].DataType == typeof(Guid))
+                            {
+                                if (value.GuidValue == null)
+                                {
+                                    newRow[key] = DBNull.Value;
+                                }
+                                else
+                                {
+                                    newRow[key] = value.GuidValue;
+                                }
+                            }
+                            else if (dt.Columns[key].DataType == typeof(bool))
+                            {
+                                if (value.BoolValue == null)
+                                {
+                                    newRow[key] = DBNull.Value;
+                                }
+                                else
+                                {
+                                    newRow[key] = value.BoolValue;
+                                }
+                            }
+                            else if (dt.Columns[key].DataType == typeof(Int32))
+                            {
+                                if (value.IntValue == null)
+                                {
+                                    newRow[key] = DBNull.Value;
+                                }
+                                else
+                                {
+                                    newRow[key] = value.IntValue;
+                                }
+                            }
+                            else if (dt.Columns[key].DataType == typeof(Int64))
+                            {
+                                if (value.LongValue == null)
+                                {
+                                    newRow[key] = DBNull.Value;
+                                }
+                                else
+                                {
+                                    newRow[key] = value.LongValue;
+                                }
+                            }
+                            else if (dt.Columns[key].DataType == typeof(DateTimeOffset))
+                            {
+                                if (value.DateTimeOffsetValue == null)
+                                {
+                                    newRow[key] = DBNull.Value;
+                                }
+                                else
+                                {
+                                    newRow[key] = value.DateTimeOffsetValue;
+                                }
+                            }
+                            else if (dt.Columns[key].DataType == typeof(DateTime))
+                            {
+                                if (value.DateTimeValue == null)
+                                {
+                                    newRow[key] = DBNull.Value;
+                                }
+                                else
+                                {
+                                    newRow[key] = value.DateTimeValue;
+                                }
+                            }
+                            else if (dt.Columns[key].DataType == typeof(decimal)
+                                || dt.Columns[key].DataType == typeof(double)
+                                || dt.Columns[key].DataType == typeof(Single)
+                                || dt.Columns[key].DataType == typeof(float))
+                            {
+                                if (value.DecimalValue == null)
+                                {
+                                    newRow[key] = DBNull.Value;
+                                }
+                                else
+                                {
+                                    newRow[key] = value.DecimalValue;
+                                }
+                            }
+                            else if (dt.Columns[key].DataType == typeof(string))
+                            {
+                                if (value.StringValue == null)
+                                {
+                                    newRow[key] = DBNull.Value;
+                                }
+                                else
+                                {
+                                    newRow[key] = value.StringValue;
+                                }
+                            }
+                            else
+                            {
+                                if (value.ByteValue == null)
+                                {
+                                    newRow[key] = DBNull.Value;
+                                }
+                                else
+                                {
+                                    newRow[key] = row[key];
+                                }
+                            }
+                        }
+                    }
+                    dt.Rows.Add(newRow);
+                }
+            }
+        }
+        public static JsonSerializer JsonSerializerSettings()
+        {
+            JsonSerializer serializer = new JsonSerializer();
+            serializer.DateTimeZoneHandling = DateTimeZoneHandling.RoundtripKind;
+            serializer.DateFormatHandling = DateFormatHandling.IsoDateFormat;
+            serializer.DateParseHandling = DateParseHandling.DateTimeOffset;
+            serializer.Culture = System.Globalization.CultureInfo.InvariantCulture;
+            return serializer;
+        }
+
+
     }
 }

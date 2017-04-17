@@ -32,6 +32,8 @@ namespace LargeData
         /// </summary>
         public static Func<List<Filter>, string, IDataReader> CallbackReader { get; set; }
 
+        public static Action<DataSet, List<Filter>> CallbackUpload { get; set; }
 
+        public static Action<IDataReader, List<Filter>> CallbackUploadReader { get; set; }
     }
 }

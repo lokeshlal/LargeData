@@ -177,6 +177,23 @@ namespace WebApi
             dr["Col13"] = Convert.ToSingle(0.99);
 
             dt.Rows.Add(dr);
+
+            dr = dt.NewRow();
+            dr["Col1"] = "World1";
+            dr["Col2"] = 1;
+            dr["Col3"] = DateTime.Now;
+            dr["Col4"] = Encoding.UTF8.GetBytes("Hello World");
+            dr["Col5"] = 2.5F;
+            dr["Col6"] = Convert.ToDecimal(2.99);
+            dr["Col7"] = Guid.NewGuid();
+            dr["Col8"] = DateTimeOffset.Now;
+            dr["Col9"] = 655;
+            dr["Col10"] = true;
+            dr["Col11"] = Encoding.UTF8.GetBytes("Hello World")[0];
+            dr["Col12"] = Convert.ToDouble(1.99);
+            dr["Col13"] = Convert.ToSingle(0.99);
+
+            dt.Rows.Add(dr);
             dataSet.Tables.Add(dt);
 
             dt = new DataTable("Table3");

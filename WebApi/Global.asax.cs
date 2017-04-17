@@ -22,7 +22,12 @@ namespace WebApi
             //ServerSettings.Callback = DataProvider.GetDataForDownload;
             // uncomment to test data reader
             ServerSettings.CallbackReader = DataProvider.GetDataReaderForDownload;
-            // set other large data settings
+            
+            // callback to handle uploaded datasets
+            //ServerSettings.CallbackUpload = DataReciever.AcceptDataSet;
+            ServerSettings.CallbackUploadReader = DataReciever.AcceptDataReader;
+
+
             ServerSettings.MaxRecordsInAFile = 10;
             ServerSettings.TemporaryLocation = @"E:\TempLocation";
             ServerSettings.MaxFileSize = 10;

@@ -6,7 +6,7 @@ using System.Web.SessionState;
 namespace LargeData
 {
     /// <summary>
-    /// server side cache element
+    /// server side cache element, can be replaced by the any other cache implementation (we have used SQL server persistance)
     /// </summary>
     public class Cache : ICache
     {
