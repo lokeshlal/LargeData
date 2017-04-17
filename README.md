@@ -15,12 +15,42 @@ On the basis of this we created the DataSet, both at client and server. Feed the
 
 At some places, we also ended up using datareader, as dataset was giving out of memory exception.
 
-## Download flow
+#### Download flow
 
 ![Download process](https://raw.githubusercontent.com/lokeshlal/LargeData/master/download_process.png)
 
-## Upload flow
+#### Upload flow
 
 ![Upload process](https://raw.githubusercontent.com/lokeshlal/LargeData/master/upload_process.png)
 
 
+#### Server configuration
+
+To include LargeData controller, please add following line in the Global file Application_Start() event
+
+```csharp
+GlobalConfiguration.Configuration.Services.Replace(typeof(IAssembliesResolver), new AssemblyResolver());
+```
+
+For download process
+
+```csharp
+// for data reader, set following property for download
+ServerSettings.CallbackReader = DataProvider.GetDataReaderForDownload;
+// for data set, set following property for download
+ServerSettings.Callback = DataProvider.GetDataReaderForDownload;
+```
+
+For upload process
+
+```csharp
+// for data reader, set following property for upload
+ServerSettings.CallbackUploadReader = DataReciever.AcceptDataReader;
+// for data set, set following property for upload
+ServerSettings.CallbackUpload = DataReciever.AcceptDataSet;
+```
+
+Staging location, where temporary files will be stored
+```csharp
+ServerSettings.TemporaryLocation = @"E:\TempLocation";
+```
