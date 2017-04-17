@@ -70,3 +70,19 @@ ClientSettings.BaseUri = "http://api.base.com"
 // Temporary location for staging files
 ClientSettings.TemporaryLocation = @"E:\location"
 ```
+
+#### Filter class
+
+Use filter class to send additional information about upload and download.
+Filters can be used in the Callbacks to retrieve the data and to process the data. Filter can have following (but not limited to)
+1. User information
+2. Database filters
+3. Tag to be associated with the request
+
+#### Sample
+
+Please have a look at the Client and WebApi project on how to use this library.
+
+Client project contains code of how to trigger upload and download request.
+
+WebApi project contains how to process upload and download request.
