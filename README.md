@@ -13,6 +13,14 @@ So we already have a "rowversion" column in all the tables (we were using SQL se
 
 On the basis of this we created the DataSet, both at client and server. Feed the dataset to the above utility and send it across.
 
-At some places, we also ended up using datareader, as dataset was giving out of memory exception (in the current code, I have only used dataset, howover that can be replaced with the datareader as well)
+At some places, we also ended up using datareader, as dataset was giving out of memory exception.
 
-###### Note: still working on this library. Adding client to server upload, which requires splitting/stitching of files. Also working on adding data reader support, otherwise in some scenarios (huge dataset) the code will throw outofmemory exception.
+## Download flow
+
+![Download process](https://raw.githubusercontent.com/lokeshlal/LargeData/master/download_process.png)
+
+## Upload flow
+
+![Upload process](https://raw.githubusercontent.com/lokeshlal/LargeData/master/upload_process.png)
+
+
